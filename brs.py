@@ -29,7 +29,7 @@ def get_symbol_at_loc(game_state, x, y):
 def progress_game(game_state, hero, move):
 
     # check if this is out hero
-    is_our_hero = game_state.hero.bot_id == hero.bot_id
+    is_our_hero = game_state.hero == hero.bot_id
 
     # copy current game state
     new_game_state = copy.deepcopy(game_state)
@@ -73,11 +73,6 @@ def progress_game(game_state, hero, move):
     # check if new position is wall or another hero
     if new_pos_sym == '#' or new_pos_sym == 'H' or new_pos_sym == '@':
         return do_logic(new_game_state, new_hero)
-
-    # change position
-    if is_our_hero:
-        new_game_state.hero.pos = (new_x, new_y)
-        new_game_state.hero.bot_last_move = move
 
     # change position in heroes list
     for j in range(len(new_game_state.heroes)):
@@ -127,43 +122,64 @@ def progress_game(game_state, hero, move):
 
 
 def do_logic(game_state, hero):
-    is_our_hero = game_state.hero.bot_id == hero.bot_id
+    is_our_hero = game_state.hero == hero.bot_id
 
     current_pos_sym = get_symbol_at_loc(game_state, hero.pos[0], hero.pos[1])
+
     if current_pos_sym == '$':
-        this_mine_is_ours = False
+
         for m in game_state.mines_locs:
+            # standing on the mine
             if m[0] == hero.pos[0] and m[1] == hero.pos[1]:
-                print(game_state.mines[m], hero.bot_id)
+
+                # this mine does not belongs to the hero
                 if not int(game_state.mines[m]) == int(hero.bot_id):
 
+                    # check if someone else owns the mine
                     mine_owner_id = int(game_state.mines[m])
                     mine_owner = None
-                    for h in game_state.heroes:
-                        if mine_owner_id == h.bot_id:
-                            mine_owner = h
+                    if mine_owner_id > 0:
+                        mine_owner = game_state.get_hero(mine_owner_id)
 
-                    hero.life -= 20
-                    if hero.life > 0:
-                        hero.mine_count += 1
-                        hero.mines.add(m)
+                    # fight for the mine
+                    hero.change_life(-20)
+
+                    # still alive
+                    if hero.is_alive():
+
+                        # get the mine
+                        hero.mines.append(m)
+
+                        # mine owner loses the mine
                         if mine_owner is not None:
-                            mine_owner.mine_count -= 1
                             mine_owner.mines.remove(m)
+                    else:
+                        # move hero to spawn position
+                        game_state.let_hero_die(hero)
 
-                    if is_our_hero:
-                        game.hero -= 20
-                        if game.hero.life > 0:
-                            game.hero.mine_count += 1
-                            hero.mines.add(m)
+    elif current_pos_sym == 'T':
+        hero.rest()
 
-                    print('mine')
+    # attack nearby heros
+    for h in game_state.heroes:
+        h_distance = abs(hero.pos[0]-h.pos[0]) + abs(hero.pos[1] + h.pos[1])
+        if h_distance <= 1:
+            hero.attack_hero(h)
 
+
+
+    # get gold
+    hero.earn_money()
+
+    # thirst
+    hero.being_thirsty()
+
+    game_state.uncrash_heros()
 
     return game_state
 
 def evalute_game_state(game_state):
-    return game_state.hero.gold * 100 / game_state.hero.life
+    return game_state.get_gold() * 100 / game_state.get_life()
 
 
 def generate_moves(game_state, hero):
@@ -249,11 +265,13 @@ for i in range(len(game.board_map)):
     print(game.board_map[i])
 
 
+print(game.get_gold())
 new_game = progress_game(game, game.heroes[3], 'North')
 new_game = progress_game(new_game, new_game.heroes[3], 'West')
 for i in range(len(new_game.board_map)):
     print(new_game.board_map[i])
 
+print(new_game.get_gold())
 #new_game2 = progress_game(new_game, new_game.heroes[2], 'North')
 #for i in range(len(new_game2.board_map)):
 #    print(new_game2.board_map[i])

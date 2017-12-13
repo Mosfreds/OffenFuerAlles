@@ -25,6 +25,36 @@ class Hero:
         self.mines = []
         self.name = hero['name']
 
+    def rest(self):
+        if self.gold >= 2:
+            self.gold -= 2
+            self.life = min(self.life + 50, 100)
+
+    def change_life(self, add_life):
+        self.life = min(self.life + add_life, 100)
+
+        if self.life <= 0:
+            self.die()
+
+    def being_thirsty(self):
+        self.life = max(self.life -1, 1)
+
+    def attack_hero(self, defender):
+        defender.change_life(-20)
+        if not defender.is_alive():
+            for mine in defender.mines:
+                self.mines.add(mine)
+            defender.mines = []
+        return
+
+    def die(self):
+        self.crashed = True;
+
+    def earn_money(self):
+        self.gold += len(self.mines)
+
+    def is_alive(self):
+        return self.crashed or self.life > 0
 
 class Game:
     """The game object that gather
@@ -60,7 +90,7 @@ class Game:
 
     def process_hero(self, hero):
         """Process the hero data"""
-        self.hero = Hero(hero)
+        self.hero = Hero(hero).bot_id
 
     def process_game(self, game):
         """Process the game data"""
@@ -72,6 +102,12 @@ class Game:
         for key in sorted(game.keys()):  # TODO: board must go before heroes
             if key in process:
                 process[key](game[key])
+
+        for hero in self.heroes:
+            for mloc in self.mines_locs:
+                if not self.mines[mloc] == '-':
+                    if int(self.mines[mloc]) == hero.bot_id:
+                        hero.mines.append(mloc)
 
     def process_board(self, board):
         """Process the board datas
@@ -98,9 +134,9 @@ class Game:
                     char = "$"
                     self.mines_locs.append(tile_coords)
                     self.mines[tile_coords] = tile[1]
-                    if tile[1] == str(self.hero.bot_id):
-                        # This mine is belong to me:-)
-                        self.hero.mines.append(tile_coords)
+                    #if tile[1] == str(self.hero.bot_id):
+                     #   # This mine is belong to me:-)
+                      #  self.hero.mines.append(tile_coords)
                 elif tile[0] == "[":
                     # It's a tavern
                     char = "T"
@@ -108,13 +144,10 @@ class Game:
                 elif tile[0] == "@":
                     # It's a hero
                     char = "H"
-                    if not int(tile[1]) == self.hero.bot_id:
-                        # I don't want to be put in an array !
-                        # I'm not a number, i'm a free bot:-)
-                        self.heroes_locs.append(tile_coords)
-                    else:
-                        # And I want to be differenciated
+                    self.heroes_locs.append(tile_coords)
+                    if int(tile[1]) == self.hero:
                         char = "@"
+
                 map_line = map_line + str(char)
             self.board_map.append(map_line)
             map_line = ""
@@ -124,10 +157,40 @@ class Game:
         for hero in heroes:
             self.spawn_points_locs[(hero['spawnPos']['y'], hero['spawnPos']['x'])] = hero['id']
             self.heroes.append(Hero(hero))
+
             # Add spawn points to map
             line = list(self.board_map[int(hero['spawnPos']['x'])])
+
             if line[int(hero['spawnPos']['y'])] != "@" and \
                     line[int(hero['spawnPos']['y'])] != "H":
                 line[int(hero['spawnPos']['y'])] = "X"
             line = "".join(line)
             self.board_map[int(hero['spawnPos']['x'])] = line
+
+
+
+
+    def get_hero(self, hero_id):
+        for hero in self.heroes:
+            if hero.bot_id == hero_id:
+                return hero
+
+    def let_hero_die(self, hero):
+        hero.pos = hero.spawn_pos
+        hero.life = 100
+        hero.mines = []
+
+        for h in self.heroes:
+            if h.pos == hero.pos:
+                if not h.bot_id == hero.bot_id:
+                    self.let_hero_die(h)
+
+    def uncrash_heros(self):
+        for h in self.heroes:
+            h.crashed = False
+
+    def get_life(self):
+        return self.get_hero(self.hero).life
+
+    def get_gold(self):
+        return self.get_hero(self.hero).gold

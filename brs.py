@@ -232,7 +232,7 @@ def search(alpha, beta, depth, turn, game_state):
     return alpha
     """
     if depth <= 0:
-        return evalute_game_state(game_state)
+        return evaluate_game_state(game_state)
 
     moves = []
     if MAX_TURN == turn:

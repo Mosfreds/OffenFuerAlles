@@ -178,7 +178,8 @@ def do_logic(game_state, hero):
 
     return game_state
 
-def evalute_game_state(game_state):
+
+def evaluate_game_state(game_state):
     return game_state.get_gold() * 100 / game_state.get_life()
 
 

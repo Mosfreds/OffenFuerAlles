@@ -326,6 +326,8 @@ class Client:
                         self.display_game()
                 except Exception as e:
                     # Super error trap !
+                    import traceback
+                    traceback.print_exc()
                     if self.gui.log_win:
                         self.pprint("Error at client.start_game:", str(e))
                         self.pprint("If your code or your settings are not responsible of this error, please report this error to:")

@@ -7,8 +7,10 @@
 #
 ########################################################################
 
+import brs
 import random
 
+from operator import itemgetter
 
 class AI:
     """Pure random A.I, you may NOT use it to win ;-)"""
@@ -50,51 +52,27 @@ class AI:
           7 - nearest_tavern_pos:
                  A tuple containing the nearest enenmy position (see above)"""
 
-        actions = ['mine', 'tavern', 'fight']
+        SEARCH_DEPTH = 100/20 + 1   # Look one fight ahead.
+        alpha = 0
+        beta = 0
+        possible_moves = brs.generate_moves(self.game, self.game.hero)
+        actions = [i[1] for i in possible_moves]
+        decisions = [(a, brs.search(alpha,
+                                    beta,
+                                    SEARCH_DEPTH,
+                                    brs.MAX_TURN,
+                                    brs.progress_game(self.game, self.game.hero, a))) for a in actions]
+        best_action = max(decisions, key=itemgetter(1))
 
-        decisions = {'mine': [("Mine", 30), ('Fight', 10), ('Tavern', 5)],
-                    'tavern': [("Mine", 10), ('Fight', 10), ('Tavern', 50)],
-                    'fight': [("Mine", 15), ('Fight', 30), ('Tavern', 10)]}
-
-        walkable = []
         path_to_goal = []
-        dirs = ["North", "East", "South", "West", "Stay"]
-
-        for y in range(self.game.board_size):
-            for x in range(self.game.board_size):
-                if (y, x) not in self.game.walls_locs or \
-                        (y, x) not in self.game.taverns_locs or \
-                        (y, x) not in self.game.mines_locs:
-
-                    walkable.append((y, x))
-
-        # With such a random path, path highlighting would
-        # display a random continuous line of red bullets over the map.
-        first_cell = self.game.hero.pos
-        path_to_goal.append(first_cell)
-
-        for i in range(int(round(random.random()*self.game.board_size))):
-            for i in range(len(walkable)):
-                random.shuffle(walkable)
-                if (walkable[i][0] - first_cell[0] == 1 and
-                        walkable[i][1] - first_cell[1] == 0) or \
-                        (walkable[i][1] - first_cell[1] == 1 and
-                        walkable[i][0] - first_cell[0] == 0):
-                    path_to_goal.append(walkable[i])
-                    first_cell = walkable[i]
-                    break
-
-        hero_move = random.choice(dirs)
-        action = random.choice(actions)
-        decision = decisions[action]
         nearest_enemy_pos = random.choice(self.game.heroes).pos
         nearest_mine_pos = random.choice(self.game.mines_locs)
         nearest_tavern_pos = random.choice(self.game.mines_locs)
 
         return (path_to_goal,
-                action,
-                decision,
-                hero_move,
+                best_action[0],
+                decisions,
+                best_action[0],
                 nearest_enemy_pos,
                 nearest_mine_pos,
                 nearest_tavern_pos)

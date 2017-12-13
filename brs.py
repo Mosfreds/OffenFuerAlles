@@ -7,7 +7,7 @@ def progress_game(game_state, hero, move):
     return game_state
 
 def evalute_game_state(game_state):
-    return game_state.hero.gold
+    return game_state.hero.gold * 100 / game_state.hero.life
 
 
 def generate_moves(game_state, hero):

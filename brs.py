@@ -5,6 +5,15 @@ class BRS:
     MAX_TURN = 1
 
     def progress_game(self, game_state, hero, move):
+        hero_num = 0
+        for h in game_state.heroes:
+            if hero.id == h.id:
+                break
+            hero_num += 1
+
+        hero_loc = game_state.heroes_locs[hero_num]
+
+
         return game_state.hero.gold()
 
     def evalute_game_state(self, game):

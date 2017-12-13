@@ -1,11 +1,22 @@
+import game
+
 class BRS:
     MIN_TURN = 0
     MAX_TURN = 1
 
     def progress_game(self, game_state, hero, move):
+        return game_state.hero.gold()
+
+    def evalute_game_state(self, game):
         pass
 
-    def search(alpha, beta, depth, turn):
+    def generate_moves(self, game_state, player):
+        """Generates possible moves for a player, without evaluating them.
+        Returns an array containing a subset of ["North", "East", "South", "West", "Stay"]
+        """
+        pass
+
+    def search(self, alpha, beta, depth, turn):
         """
         if depth <= 0:
             #return eval()
@@ -30,4 +41,5 @@ class BRS:
 
         return alpha
         """
-        pass
+        if depth <= 0:
+            return evalute_game_state(game_state)

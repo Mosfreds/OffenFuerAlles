@@ -19,11 +19,25 @@ class BRS:
     def evalute_game_state(self, game):
         pass
 
-    def generate_moves(self, game_state, player):
+
+    def generate_moves(self, game_state, hero):
         """Generates possible moves for a player, without evaluating them.
         Returns an array containing a subset of ["North", "East", "South", "West", "Stay"]
         """
-        pass
+        x, y = hero.pos
+        moves = ["Stay"]
+
+        if x > 0 and game_state.board[x-1][y] != '#':
+            moves.append("West")
+        if x < game_state.board_size - 1 and game_state.board[x+1][y] != '#':
+            moves.append("West")
+        if y > 0 and game_state.board[x][y-1] != '#':
+            moves.append("North")
+        if y < game_state.board_size - 1 and game_state.board[x][y+1] != '#':
+            moves.append("South")
+
+        return moves
+
 
     def search(self, alpha, beta, depth, turn):
         """

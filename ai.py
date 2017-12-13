@@ -53,15 +53,15 @@ class AI:
                  A tuple containing the nearest enenmy position (see above)"""
 
         SEARCH_DEPTH = 20   # Look one fight ahead.
-        alpha = brs.progress_game(self.game, self.game.hero, "Stay").hero.gold
+        alpha = brs.progress_game(self.game, self.game.get_hero(), "Stay").get_gold()
         beta = min(self.game.heroes, key=lambda h : h.gold).gold
-        possible_moves = brs.generate_moves(self.game, self.game.hero)
+        possible_moves = brs.generate_moves(self.game, self.game.get_hero())
         actions = [i[1] for i in possible_moves]
         decisions = [(a, brs.search(alpha,
                                     beta,
                                     SEARCH_DEPTH,
                                     brs.MAX_TURN,
-                                    brs.progress_game(self.game, self.game.hero, a))) for a in actions]
+                                    brs.progress_game(self.game, self.game.get_hero(), a))) for a in actions]
         best_action = max(decisions, key=itemgetter(1))
 
         path_to_goal = []

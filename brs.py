@@ -9,41 +9,45 @@ MAX_TURN = 1
 
 
 def get_symbol_at_loc(game_state, x, y):
+    """Returns the symbol which is under the hero"""
     current_sym = game_state.board_map[x][y]
 
     if current_sym == "H" or current_sym == "@":
+
+        # check for mines
         for pos in game_state.mines_locs:
             if pos[0] == x and pos[1] == y:
                 return '$'
+
+        # check for spawn points
         for pos in game_state.spawn_points_locs:
             if pos[0] == x and pos[1] == y:
                 return 'X'
+
+        # check for taverns
         for pos in game_state.taverns_locs:
             if pos[0] == x and pos[1] == y:
                 return 'T'
+
+        # just an empty field
         return ' '
     else:
         return current_sym
 
 
 def progress_game(game_state, hero, move):
+    """Let the hero perform a move on the given game field"""
 
     # check if this is out hero
-    is_our_hero = game_state.hero == hero.bot_id
+    is_our_hero = game_state.hero_id == hero.bot_id
 
     # copy current game state
     new_game_state = copy.deepcopy(game_state)
-    new_hero = None
-    for h in new_game_state.heroes:
-        if h.bot_id == hero.bot_id:
-            new_hero = h
-            break
+    new_hero = new_game_state.get_hero(hero.bot_id)
 
-    old_x = new_hero.pos[0]
-    old_y = new_hero.pos[1]
-    new_x = new_hero.pos[0]
-    new_y = new_hero.pos[1]
-    is_vertical_move = False;
+    old_x, old_y = new_hero.pos
+    new_x, new_y = new_hero.pos
+    is_vertical_move = False
 
     # get new position
     if move == 'North':
@@ -74,16 +78,13 @@ def progress_game(game_state, hero, move):
     if new_pos_sym == '#' or new_pos_sym == 'H' or new_pos_sym == '@':
         return do_logic(new_game_state, new_hero)
 
-    # change position in heroes list
-    for j in range(len(new_game_state.heroes)):
-        if hero.bot_id == new_game_state.heroes[j].bot_id:
-            new_game_state.heroes[j].pos = (new_x, new_y)
-            new_game_state.heroes[j].bot_last_move = move
+    # change position
+    new_hero.pos = (new_x, new_y)
+    new_hero.bot_last_move = move
 
-            if not is_our_hero:
-                new_game_state.heroes_locs[j] = (new_x, new_y)
-
+    # adapt the game field
     if is_vertical_move:
+        # two rows need to be changed
         old_line_before = ''
         old_line_after = ''
 
@@ -91,7 +92,7 @@ def progress_game(game_state, hero, move):
             old_line_before = new_game_state.board_map[old_x][0:old_y]
 
         if old_y < new_game_state.board_size:
-            old_line_after = new_game_state.board_map[old_x][old_y+1:]
+            old_line_after = new_game_state.board_map[old_x][old_y + 1:]
 
         new_line_before = ''
         new_line_after = ''
@@ -99,19 +100,20 @@ def progress_game(game_state, hero, move):
         if new_y > 0:
             new_line_before = new_game_state.board_map[new_x][0:new_y]
         if new_y < new_game_state.board_size:
-            new_line_after = new_game_state.board_map[new_x][new_y+1:]
+            new_line_after = new_game_state.board_map[new_x][new_y + 1:]
 
         new_game_state.board_map[new_x] = new_line_before + hero_sym + new_line_after
         new_game_state.board_map[old_x] = old_line_before + swap_sym + old_line_after
 
     else:
+        # only one row needs to be changed
         line_before = ''
         line_after = ''
 
         if old_y > 0:
             line_before = new_game_state.board_map[old_x][0:min(old_y, new_y)]
         if new_y < new_game_state.board_size:
-            line_after = new_game_state.board_map[old_x][max(old_y, new_y)+1:]
+            line_after = new_game_state.board_map[old_x][max(old_y, new_y) + 1:]
 
         if new_y < old_y:
             new_game_state.board_map[old_x] = line_before + hero_sym + swap_sym + line_after
@@ -122,13 +124,20 @@ def progress_game(game_state, hero, move):
 
 
 def do_logic(game_state, hero):
-    is_our_hero = game_state.hero == hero.bot_id
+    """
+    Evaluates the game field at the end of the turn
+    and does the logic stuff
 
-    current_pos_sym = get_symbol_at_loc(game_state, hero.pos[0], hero.pos[1])
+    """
+    current_pos_sym = get_symbol_at_loc(
+        game_state, hero.pos[0], hero.pos[1])
 
+    # active hero stands on a mine
     if current_pos_sym == '$':
 
+        # search for the mine
         for m in game_state.mines_locs:
+
             # standing on the mine
             if m[0] == hero.pos[0] and m[1] == hero.pos[1]:
 
@@ -157,16 +166,15 @@ def do_logic(game_state, hero):
                         # move hero to spawn position
                         game_state.let_hero_die(hero)
 
+    # active hero stands on a tavern
     elif current_pos_sym == 'T':
         hero.rest()
 
     # attack nearby heros
     for h in game_state.heroes:
-        h_distance = abs(hero.pos[0]-h.pos[0]) + abs(hero.pos[1] + h.pos[1])
+        h_distance = abs(hero.pos[0] - h.pos[0]) + abs(hero.pos[1] + h.pos[1])
         if h_distance <= 1:
             hero.attack_hero(h)
-
-
 
     # get gold
     hero.earn_money()
@@ -191,20 +199,20 @@ def generate_moves(game_state, hero):
     x, y = hero.pos
     moves = ["Stay"]
 
-    if x > 0 and game_state.board_map[x-1][y] != '#':
+    if x > 0 and game_state.board_map[x - 1][y] != '#':
         moves.append("West")
-    if x < game_state.board_size - 1 and game_state.board_map[x+1][y] != '#':
+    if x < game_state.board_size - 1 and game_state.board_map[x + 1][y] != '#':
         moves.append("East")
-    if y > 0 and game_state.board_map[x][y-1] != '#':
+    if y > 0 and game_state.board_map[x][y - 1] != '#':
         moves.append("North")
-    if y < game_state.board_size - 1 and game_state.board_map[x][y+1] != '#':
+    if y < game_state.board_size - 1 and game_state.board_map[x][y + 1] != '#':
         moves.append("South")
 
     return [(hero, m) for m in moves]
 
 
 def opponents(game_state):
-    return [h for h in game_state.heroes if h.bot_id != game_state.hero.bot_id]
+    return [h for h in game_state.heroes if h.bot_id != game_state.hero_id]
 
 
 def search(alpha, beta, depth, turn, game_state):
@@ -237,7 +245,8 @@ def search(alpha, beta, depth, turn, game_state):
 
     moves = []
     if MAX_TURN == turn:
-        moves = generate_moves(game_state, game_state.hero)
+        moves = generate_moves(
+            game_state, game_state.get_hero())
         turn = MIN_TURN
     else:
         for o in opponents(game_state):
@@ -247,7 +256,7 @@ def search(alpha, beta, depth, turn, game_state):
 
     for m in moves:
         new_state = progress_game(game_state, m[0], m[1])
-        v = -search(-alpha, -beta, depth-1, turn, new_state)
+        v = -search(-alpha, -beta, depth - 1, turn, new_state)
 
         if v >= beta:
             return v
@@ -256,27 +265,27 @@ def search(alpha, beta, depth, turn, game_state):
     return alpha
 
 
-json_file = open('test/example_state.json')
-json_str = json_file.read()
-json_data = json.loads(json_str)
-game = game.Game(json_data)
+if __name__ == "__main__":
 
-print(len(game.board_map), len(game.board_map[0]), game.board_size)
-for i in range(len(game.board_map)):
-    print(game.board_map[i])
+    json_file = open('test/example_state.json')
+    json_str = json_file.read()
+    json_data = json.loads(json_str)
+    game = game.Game(json_data)
 
+    print(len(game.board_map), len(game.board_map[0]), game.board_size)
+    for i in range(len(game.board_map)):
+        print(game.board_map[i])
 
-print(game.get_gold())
-new_game = progress_game(game, game.heroes[3], 'North')
-new_game = progress_game(new_game, new_game.heroes[3], 'West')
-for i in range(len(new_game.board_map)):
-    print(new_game.board_map[i])
+    print(game.get_gold())
+    new_game = progress_game(game, game.heroes[3], 'North')
+    new_game = progress_game(new_game, new_game.heroes[3], 'West')
+    for i in range(len(new_game.board_map)):
+        print(new_game.board_map[i])
 
-print(new_game.get_gold())
-#new_game2 = progress_game(new_game, new_game.heroes[2], 'North')
-#for i in range(len(new_game2.board_map)):
-#    print(new_game2.board_map[i])
+    print(new_game.get_gold())
+    # new_game2 = progress_game(new_game, new_game.heroes[2], 'North')
+    # for i in range(len(new_game2.board_map)):
+    #    print(new_game2.board_map[i])
 
-
-#for l in new_game2.heroes_locs:
-#    print(l)
+    # for l in new_game2.heroes_locs:
+    #    print(l)

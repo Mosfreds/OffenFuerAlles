@@ -65,7 +65,7 @@ class Game:
         self.mines_locs = []
         self.spawn_points_locs = {}
         self.taverns_locs = []
-        self.hero = None
+        self.hero_id = None
         self.heroes = []
         self.heroes_locs = []
         self.walls_locs = []
@@ -77,6 +77,18 @@ class Game:
         self.board_map = []
 
         self.process_data(self.state)
+
+    #@property
+    #def hero(self):
+    #    for hero in self.heroes:
+    #        if hero.bot_id == self.hero_id:
+    #            return hero
+
+    #@hero.setter
+    #def hero(self, h):
+    #    for i in range(len(self.heroes)):
+    #        if self.heroes[i].bot_id == self.hero_id:
+    #            self.heroes[i] = h
 
     def process_data(self, state):
         """Parse the game state"""
@@ -90,7 +102,7 @@ class Game:
 
     def process_hero(self, hero):
         """Process the hero data"""
-        self.hero = Hero(hero).bot_id
+        self.hero_id = Hero(hero).bot_id
 
     def process_game(self, game):
         """Process the game data"""
@@ -145,7 +157,7 @@ class Game:
                     # It's a hero
                     char = "H"
                     self.heroes_locs.append(tile_coords)
-                    if int(tile[1]) == self.hero:
+                    if int(tile[1]) == self.hero_id:
                         char = "@"
 
                 map_line = map_line + str(char)
@@ -167,10 +179,9 @@ class Game:
             line = "".join(line)
             self.board_map[int(hero['spawnPos']['x'])] = line
 
-
-
-
-    def get_hero(self, hero_id):
+    def get_hero(self, hero_id=None):
+        if hero_id is None:
+            hero_id = self.hero_id
         for hero in self.heroes:
             if hero.bot_id == hero_id:
                 return hero
@@ -190,7 +201,7 @@ class Game:
             h.crashed = False
 
     def get_life(self):
-        return self.get_hero(self.hero).life
+        return self.get_hero(self.hero_id).life
 
     def get_gold(self):
-        return self.get_hero(self.hero).gold
+        return self.get_hero(self.hero_id).gold

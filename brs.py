@@ -2,10 +2,11 @@ import game
 import json
 import copy
 
+MIN_TURN = 0
+MAX_TURN = 1
 
 class BRS(object):
-    MIN_TURN = 0
-    MAX_TURN = 1
+
 
     def get_symbol_at_loc(self, game_state, x, y):
         current_sym = game_state.board_map[x][y]

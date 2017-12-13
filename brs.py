@@ -117,7 +117,7 @@ def progress_game(game_state, hero, move):
 
     return new_game_state
 
-def evalute_game_state(game_state):
+def evaluate_game_state(game_state):
     return game_state.hero.gold * 100 / game_state.hero.life
 
 
@@ -171,7 +171,7 @@ def search(alpha, beta, depth, turn, game_state):
     return alpha
     """
     if depth <= 0:
-        return evalute_game_state(game_state)
+        return evaluate_game_state(game_state)
 
     moves = []
     if MAX_TURN == turn:

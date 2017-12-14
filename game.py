@@ -24,6 +24,7 @@ class Hero:
         self.mine_count = hero['mineCount']
         self.mines = []
         self.name = hero['name']
+        self.sym = 'H'
 
     def rest(self):
         if self.gold >= 2:
@@ -39,22 +40,24 @@ class Hero:
     def being_thirsty(self):
         self.life = max(self.life -1, 1)
 
-    def attack_hero(self, defender):
+    def attack_hero(self, game, defender):
         defender.change_life(-20)
         if not defender.is_alive():
             for mine in defender.mines:
-                self.mines.add(mine)
+                self.mines.append(mine)
+                game.mines[mine] = self.bot_id
+
             defender.mines = []
         return
 
     def die(self):
-        self.crashed = True;
+        self.crashed = True
 
     def earn_money(self):
         self.gold += len(self.mines)
 
     def is_alive(self):
-        return self.crashed or self.life > 0
+        return not self.crashed and self.life > 0
 
 class Game:
     """The game object that gather
@@ -120,6 +123,7 @@ class Game:
                 if not self.mines[mloc] == '-':
                     if int(self.mines[mloc]) == hero.bot_id:
                         hero.mines.append(mloc)
+        self.get_hero().sym = '@'
 
     def process_board(self, board):
         """Process the board datas
@@ -187,8 +191,60 @@ class Game:
                 return hero
 
     def let_hero_die(self, hero):
+        old_x, old_y = hero.pos
+        new_x, new_y = hero.spawn_pos
+
+        ori_sym = self.get_symbol_at_loc(hero.pos[0], hero.pos[1])
+        cur_sym = self.board_map[hero.pos[0]][hero.pos[1]]
+
+        if not cur_sym == hero.sym:
+            ori_sym = cur_sym
+        #elif not (old_x == new_x and old_y == new_y):
+         #   ori_sym = self.board_map[hero.spawn_pos[0]][hero.spawn_pos[1]]
+        #elif(not old_x == new_x) or (not old_y == new_y):
+        #    ori_sym = cur_sym
+
+        if old_x == new_x:
+            line_before = ''
+            line_middle = ''
+            line_after = ''
+
+            line_before = self.board_map[old_x][0:min(old_y, new_y)]
+            line_middle = self.board_map[old_x][min(old_y, new_y)+1:max(old_y, new_y)]
+            line_after = self.board_map[old_x][max(old_y, new_y)+1:]
+            if old_y < new_y:
+                self.board_map[old_x] = line_before \
+                                        + ori_sym + line_middle \
+                                        + hero.sym + line_after
+            else:
+                self.board_map[old_x] = line_before \
+                                        + hero.sym + line_middle \
+                                        + ori_sym + line_after
+        else:
+            old_line_before = ''
+            old_line_after = ''
+
+            if old_y > 0:
+                old_line_before = self.board_map[old_x][0:old_y]
+
+            if old_y < self.board_size:
+                old_line_after = self.board_map[old_x][old_y + 1:]
+
+            new_line_before = ''
+            new_line_after = ''
+
+            if new_y > 0:
+                new_line_before = self.board_map[new_x][0:new_y]
+            if new_y < self.board_size:
+                new_line_after = self.board_map[new_x][new_y + 1:]
+
+            self.board_map[new_x] = new_line_before + hero.sym + new_line_after
+            self.board_map[old_x] = old_line_before + ori_sym + old_line_after
+
         hero.pos = hero.spawn_pos
         hero.life = 100
+        for mine in hero.mines:
+            self.mines[mine] = '-'
         hero.mines = []
 
         for h in self.heroes:
@@ -205,3 +261,29 @@ class Game:
 
     def get_gold(self):
         return self.get_hero(self.hero_id).gold
+
+    def get_symbol_at_loc(self, x, y):
+        """Returns the symbol which is under the hero"""
+        current_sym = self.board_map[x][y]
+
+        if current_sym == "H" or current_sym == "@":
+
+            # check for mines
+            for pos in self.mines_locs:
+                if pos[0] == x and pos[1] == y:
+                    return '$'
+
+            # check for spawn points
+            for pos in self.spawn_points_locs:
+                if pos[1] == x and pos[0] == y:
+                    return 'X'
+
+            # check for taverns
+            for pos in self.taverns_locs:
+                if pos[0] == x and pos[1] == y:
+                    return 'T'
+
+            # just an empty field
+            return ' '
+        else:
+            return current_sym

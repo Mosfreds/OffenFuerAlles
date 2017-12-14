@@ -52,7 +52,7 @@ class AI:
           7 - nearest_tavern_pos:
                  A tuple containing the nearest enenmy position (see above)"""
 
-        SEARCH_DEPTH = 20   # Look one fight ahead.
+        SEARCH_DEPTH = 3   # Look one fight ahead.
         alpha = brs.progress_game(self.game, self.game.get_hero(), "Stay").get_gold()
         beta = min(self.game.heroes, key=lambda h : h.gold).gold
         possible_moves = brs.generate_moves(self.game, self.game.get_hero())

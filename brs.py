@@ -9,8 +9,6 @@ MIN_TURN = 0
 MAX_TURN = 1
 
 
-
-
 def progress_game(game_state, hero, move):
     """Let the hero perform a move on the given game field"""
 
@@ -305,15 +303,4 @@ if __name__ == "__main__":
     for i in range(len(game.board_map)):
         print(game.board_map[i])
     print(t, ' nano s')
-    #new_game = progress_game(game, game.heroes[3], 'North')
-    #new_game = progress_game(new_game, new_game.heroes[3], 'West')
-    #for i in range(len(new_game.board_map)):
-    #    print(new_game.board_map[i])
 
-    #print(new_game.get_gold(), new_ga#me.get_life())
-    # new_game2 = progress_game(new_game, new_game.heroes[2], 'North')
-    # for i in range(len(new_game2.board_map)):
-    #    print(new_game2.board_map[i])
-
-    # for l in new_game2.heroes_locs:
-    #    print(l)

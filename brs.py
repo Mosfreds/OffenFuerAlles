@@ -35,9 +35,9 @@ def progress_game(game_state, hero, move):
         return do_logic(new_game_state, new_hero)
 
     # if out of bounds
-    if new_x < 0 or new_x > new_game_state.board_size:
+    if new_x < 0 or new_x >= new_game_state.board_size:
         return do_logic(new_game_state, new_hero)
-    if new_y < 0 or new_y > new_game_state.board_size:
+    if new_y < 0 or new_y >= new_game_state.board_size:
         return do_logic(new_game_state, new_hero)
 
     # get symbols
@@ -119,7 +119,7 @@ def do_logic(game_state, hero):
                 else:
                     mine_owner_id = int(game_state.mines[m])
 
-                if not int(game_state.mines[m]) == int(hero.bot_id):
+                if not mine_owner_id == int(hero.bot_id):
 
                     # check if someone else owns the mine
                     mine_owner = None
@@ -135,7 +135,7 @@ def do_logic(game_state, hero):
 
                         # get the mine
                         hero.mines.append(m)
-                        game_state.mines[m] = hero.id
+                        game_state.mines[m] = hero.bot_id
 
                         # mine owner loses the mine
                         if mine_owner is not None:

@@ -8,6 +8,7 @@
 ########################################################################
 
 import brs
+import math
 import random
 
 from operator import itemgetter
@@ -52,13 +53,13 @@ class AI:
           7 - nearest_tavern_pos:
                  A tuple containing the nearest enenmy position (see above)"""
 
-        SEARCH_DEPTH = 20   # Look one fight ahead.
-        alpha = brs.progress_game(self.game, self.game.hero, "Stay").hero.gold
-        beta = min(self.game.heroes, key=lambda h : h.gold).gold
+        SEARCH_DEPTH = 5   # Look one fight ahead.
+        #alpha = brs.progress_game(self.game, self.game.hero, "Stay").hero.gold
+        #beta = min(self.game.heroes, key=lambda h : h.gold).gold
         possible_moves = brs.generate_moves(self.game, self.game.hero)
         actions = [i[1] for i in possible_moves]
-        decisions = [(a, brs.search(alpha,
-                                    beta,
+        decisions = [(a, brs.search(math.inf,
+                                    -math.inf,
                                     SEARCH_DEPTH,
                                     brs.MAX_TURN,
                                     brs.progress_game(self.game, self.game.hero, a))) for a in actions]

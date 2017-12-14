@@ -199,16 +199,8 @@ class Game:
 
         if not cur_sym == hero.sym:
             ori_sym = cur_sym
-        #elif not (old_x == new_x and old_y == new_y):
-         #   ori_sym = self.board_map[hero.spawn_pos[0]][hero.spawn_pos[1]]
-        #elif(not old_x == new_x) or (not old_y == new_y):
-        #    ori_sym = cur_sym
 
         if old_x == new_x:
-            line_before = ''
-            line_middle = ''
-            line_after = ''
-
             line_before = self.board_map[old_x][0:min(old_y, new_y)]
             line_middle = self.board_map[old_x][min(old_y, new_y)+1:max(old_y, new_y)]
             line_after = self.board_map[old_x][max(old_y, new_y)+1:]

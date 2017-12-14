@@ -254,7 +254,7 @@ class Client:
                     if int(player.gold) > gold:
                         winner = (player.name, player.bot_id)
                         gold = int(player.gold)
-                if winner[1] == self.bot.game.hero.bot_id:
+                if winner[1] == self.bot.game.get_hero(self.bot.game.hero_id):
                     self.victory += 1
                 self.pprint("* " + winner[0] + " wins. ******************")
                 self.gui.display_summary(str(i+1) + "/" + str(self.config.number_of_games),
@@ -447,18 +447,18 @@ class Client:
             # Use the following methods to display datas
             # within the interface
             self.gui.display_url(self.bot.game.url)
-            self.gui.display_bot_name(self.bot.game.hero.name)
+            self.gui.display_bot_name(self.bot.game.get_hero().name)
             self.gui.display_last_move(self.bot.hero_last_move)
-            self.gui.display_pos(self.bot.game.hero.pos)
+            self.gui.display_pos(self.bot.game.get_hero().pos)
             self.gui.display_last_pos(self.bot.last_pos)
             self.gui.display_last_life(self.bot.last_life)
-            self.gui.display_life(self.bot.game.hero.life)
+            self.gui.display_life(self.bot.game.get_life())
             self.gui.display_last_action(self.bot.last_action)
             self.gui.display_turn((self.bot.game.turn/4)-1, self.bot.game.max_turns/4)
-            self.gui.display_elo(self.bot.game.hero.elo)
-            self.gui.display_gold(self.bot.game.hero.gold)
+            self.gui.display_elo(self.bot.game.get_hero().elo)
+            self.gui.display_gold(self.bot.game.get_gold())
             self.gui.display_last_gold(self.bot.last_gold)
-            self.gui.display_mine_count(str(self.bot.game.hero.mine_count)+"/"+str(len(self.bot.game.mines)))
+            self.gui.display_mine_count(str(len(self.bot.game.get_hero().mines))+"/"+str(len(self.bot.game.mines)))
             self.gui.display_last_mine_count(str(self.bot.last_mine_count)+"/"+str(len(self.bot.game.mines)))
             # You can also use those methods to display more information
             # Function names are explicit, don't they ?
@@ -469,7 +469,7 @@ class Client:
             self.gui.display_last_nearest_hero(self.bot.last_nearest_enemy_pos)
             self.gui.display_last_nearest_tavern(self.bot.last_nearest_tavern_pos)
             # Print informations about other players
-            self.gui.display_heroes(self.bot.game.heroes, self.bot.game.hero.bot_id)
+            self.gui.display_heroes(self.bot.game.heroes, self.bot.game.hero_id)
             # Print a *list of tuples* representing what you think can be usefull
             # i.e an heuristic result
             self.gui.display_decision(self.bot.decision)

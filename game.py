@@ -24,7 +24,40 @@ class Hero:
         self.mine_count = hero['mineCount']
         self.mines = []
         self.name = hero['name']
+        self.sym = 'H'
 
+    def rest(self):
+        if self.gold >= 2:
+            self.gold -= 2
+            self.life = min(self.life + 50, 100)
+
+    def change_life(self, add_life):
+        self.life = min(self.life + add_life, 100)
+
+        if self.life <= 0:
+            self.die()
+
+    def being_thirsty(self):
+        self.life = max(self.life -1, 1)
+
+    def attack_hero(self, game, defender):
+        defender.change_life(-20)
+        if not defender.is_alive():
+            for mine in defender.mines:
+                self.mines.append(mine)
+                game.mines[mine] = self.bot_id
+
+            defender.mines = []
+        return
+
+    def die(self):
+        self.crashed = True
+
+    def earn_money(self):
+        self.gold += len(self.mines)
+
+    def is_alive(self):
+        return not self.crashed and self.life > 0
 
 class Game:
     """The game object that gather
@@ -35,7 +68,7 @@ class Game:
         self.mines_locs = []
         self.spawn_points_locs = {}
         self.taverns_locs = []
-        self.hero = None
+        self.hero_id = None
         self.heroes = []
         self.heroes_locs = []
         self.walls_locs = []
@@ -47,6 +80,18 @@ class Game:
         self.board_map = []
 
         self.process_data(self.state)
+
+    #@property
+    #def hero(self):
+    #    for hero in self.heroes:
+    #        if hero.bot_id == self.hero_id:
+    #            return hero
+
+    #@hero.setter
+    #def hero(self, h):
+    #    for i in range(len(self.heroes)):
+    #        if self.heroes[i].bot_id == self.hero_id:
+    #            self.heroes[i] = h
 
     def process_data(self, state):
         """Parse the game state"""
@@ -60,7 +105,7 @@ class Game:
 
     def process_hero(self, hero):
         """Process the hero data"""
-        self.hero = Hero(hero)
+        self.hero_id = Hero(hero).bot_id
 
     def process_game(self, game):
         """Process the game data"""
@@ -72,6 +117,13 @@ class Game:
         for key in sorted(game.keys()):  # TODO: board must go before heroes
             if key in process:
                 process[key](game[key])
+
+        for hero in self.heroes:
+            for mloc in self.mines_locs:
+                if not self.mines[mloc] == '-':
+                    if int(self.mines[mloc]) == hero.bot_id:
+                        hero.mines.append(mloc)
+        self.get_hero().sym = '@'
 
     def process_board(self, board):
         """Process the board datas
@@ -98,9 +150,9 @@ class Game:
                     char = "$"
                     self.mines_locs.append(tile_coords)
                     self.mines[tile_coords] = tile[1]
-                    if tile[1] == str(self.hero.bot_id):
-                        # This mine is belong to me:-)
-                        self.hero.mines.append(tile_coords)
+                    #if tile[1] == str(self.hero.bot_id):
+                     #   # This mine is belong to me:-)
+                      #  self.hero.mines.append(tile_coords)
                 elif tile[0] == "[":
                     # It's a tavern
                     char = "T"
@@ -108,13 +160,10 @@ class Game:
                 elif tile[0] == "@":
                     # It's a hero
                     char = "H"
-                    if not int(tile[1]) == self.hero.bot_id:
-                        # I don't want to be put in an array !
-                        # I'm not a number, i'm a free bot:-)
-                        self.heroes_locs.append(tile_coords)
-                    else:
-                        # And I want to be differenciated
+                    self.heroes_locs.append(tile_coords)
+                    if int(tile[1]) == self.hero_id:
                         char = "@"
+
                 map_line = map_line + str(char)
             self.board_map.append(map_line)
             map_line = ""
@@ -124,10 +173,117 @@ class Game:
         for hero in heroes:
             self.spawn_points_locs[(hero['spawnPos']['y'], hero['spawnPos']['x'])] = hero['id']
             self.heroes.append(Hero(hero))
+
             # Add spawn points to map
             line = list(self.board_map[int(hero['spawnPos']['x'])])
+
             if line[int(hero['spawnPos']['y'])] != "@" and \
                     line[int(hero['spawnPos']['y'])] != "H":
                 line[int(hero['spawnPos']['y'])] = "X"
             line = "".join(line)
             self.board_map[int(hero['spawnPos']['x'])] = line
+
+    def get_hero(self, hero_id=None):
+        if hero_id is None:
+            hero_id = self.hero_id
+        for hero in self.heroes:
+            if hero.bot_id == hero_id:
+                return hero
+
+    def let_hero_die(self, hero):
+        old_x, old_y = hero.pos
+        new_x, new_y = hero.spawn_pos
+
+        ori_sym = self.get_symbol_at_loc(hero.pos[0], hero.pos[1])
+        cur_sym = self.board_map[hero.pos[0]][hero.pos[1]]
+
+        if not cur_sym == hero.sym:
+            ori_sym = cur_sym
+        #elif not (old_x == new_x and old_y == new_y):
+         #   ori_sym = self.board_map[hero.spawn_pos[0]][hero.spawn_pos[1]]
+        #elif(not old_x == new_x) or (not old_y == new_y):
+        #    ori_sym = cur_sym
+
+        if old_x == new_x:
+            line_before = ''
+            line_middle = ''
+            line_after = ''
+
+            line_before = self.board_map[old_x][0:min(old_y, new_y)]
+            line_middle = self.board_map[old_x][min(old_y, new_y)+1:max(old_y, new_y)]
+            line_after = self.board_map[old_x][max(old_y, new_y)+1:]
+            if old_y < new_y:
+                self.board_map[old_x] = line_before \
+                                        + ori_sym + line_middle \
+                                        + hero.sym + line_after
+            else:
+                self.board_map[old_x] = line_before \
+                                        + hero.sym + line_middle \
+                                        + ori_sym + line_after
+        else:
+            old_line_before = ''
+            old_line_after = ''
+
+            if old_y > 0:
+                old_line_before = self.board_map[old_x][0:old_y]
+
+            if old_y < self.board_size:
+                old_line_after = self.board_map[old_x][old_y + 1:]
+
+            new_line_before = ''
+            new_line_after = ''
+
+            if new_y > 0:
+                new_line_before = self.board_map[new_x][0:new_y]
+            if new_y < self.board_size:
+                new_line_after = self.board_map[new_x][new_y + 1:]
+
+            self.board_map[new_x] = new_line_before + hero.sym + new_line_after
+            self.board_map[old_x] = old_line_before + ori_sym + old_line_after
+
+        hero.pos = hero.spawn_pos
+        hero.life = 100
+        for mine in hero.mines:
+            self.mines[mine] = '-'
+        hero.mines = []
+
+        for h in self.heroes:
+            if h.pos == hero.pos:
+                if not h.bot_id == hero.bot_id:
+                    self.let_hero_die(h)
+
+    def uncrash_heros(self):
+        for h in self.heroes:
+            h.crashed = False
+
+    def get_life(self):
+        return self.get_hero(self.hero_id).life
+
+    def get_gold(self):
+        return self.get_hero(self.hero_id).gold
+
+    def get_symbol_at_loc(self, x, y):
+        """Returns the symbol which is under the hero"""
+        current_sym = self.board_map[x][y]
+
+        if current_sym == "H" or current_sym == "@":
+
+            # check for mines
+            for pos in self.mines_locs:
+                if pos[0] == x and pos[1] == y:
+                    return '$'
+
+            # check for spawn points
+            for pos in self.spawn_points_locs:
+                if pos[1] == x and pos[0] == y:
+                    return 'X'
+
+            # check for taverns
+            for pos in self.taverns_locs:
+                if pos[0] == x and pos[1] == y:
+                    return 'T'
+
+            # just an empty field
+            return ' '
+        else:
+            return current_sym

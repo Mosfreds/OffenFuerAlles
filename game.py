@@ -26,6 +26,9 @@ class Hero:
         self.name = hero['name']
         self.sym = 'H'
 
+    def __eq__(self, other):
+        return self.bot_id == other.bot_id
+
     def rest(self):
         if self.gold >= 2:
             self.gold -= 2
